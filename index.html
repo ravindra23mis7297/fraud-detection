@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FraudShield — Food Delivery Fraud Detector</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    /* ── Reset & Variables ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:          #0a0b0e;
+      --surface:     #111318;
+      --surface2:    #181c24;
+      --border:      #252a36;
+      --accent:      #ff5c3a;
+      --accent2:     #ff8c6b;
+      --green:       #2dff96;
+      --yellow:      #ffd84d;
+      --red:         #ff3b5c;
+      --text:        #e8eaf0;
+      --muted:       #636b82;
+      --font-display: 'Syne', sans-serif;
+      --font-mono:    'DM Mono', monospace;
+      --radius:      10px;
+      --transition:  0.2s ease;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-display);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated grid background ──────────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    /* ── Layout ─────────────────────────────────────────────────────────── */
+    .wrapper {
+      position: relative; z-index: 1;
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 40px 0 48px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 48px;
+    }
+
+    .logo-mark {
+      width: 44px; height: 44px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: grid; place-items: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    header h1 {
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    header span.sub {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 400;
+      font-family: var(--font-mono);
+      margin-top: 2px;
+    }
+
+    /* ── Two-column form ─────────────────────────────────────────────────── */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 680px) { .grid { grid-template-columns: 1fr; } }
+
+    /* ── Card ────────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: border-color var(--transition);
+    }
+    .card:hover { border-color: #333a4a; }
+
+    .card-title {
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      color: var(--accent);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    /* ── Image upload zone ───────────────────────────────────────────────── */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 32px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition);
+      position: relative;
+    }
+    .drop-zone:hover,
+    .drop-zone.dragover { border-color: var(--accent); background: rgba(255,92,58,.05); }
+
+    .drop-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+
+    .drop-icon { font-size: 2rem; margin-bottom: 10px; }
+    .drop-label { font-size: 0.85rem; color: var(--muted); }
+    .drop-label strong { color: var(--accent); }
+
+    #image-preview {
+      width: 100%;
+      max-height: 200px;
+      object-fit: cover;
+      border-radius: var(--radius);
+      margin-top: 14px;
+      display: none;
+      border: 1px solid var(--border);
+    }
+
+    /* ── Form fields ─────────────────────────────────────────────────────── */
+    .fields { display: flex; flex-direction: column; gap: 12px; }
+
+    .field-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      margin-bottom: 5px;
+      letter-spacing: 0.5px;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      outline: none;
+      transition: border-color var(--transition);
+      appearance: none;
+    }
+    input:focus, select:focus { border-color: var(--accent); }
+
+    /* ── Toggle chips ────────────────────────────────────────────────────── */
+    .chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .chip {
+      padding: 6px 14px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      background: transparent;
+      color: var(--muted);
+      transition: all var(--transition);
+    }
+    .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* ── Submit button ───────────────────────────────────────────────────── */
+    .btn-submit {
+      margin-top: 32px;
+      width: 100%;
+      padding: 16px;
+      border-radius: var(--radius);
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: transform var(--transition), background var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .btn-submit:hover  { background: var(--accent2); transform: translateY(-2px); }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* ── Spinner ─────────────────────────────────────────────────────────── */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Result panel ────────────────────────────────────────────────────── */
+    #result-panel {
+      display: none;
+      margin-top: 32px;
+    }
+
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      animation: slideUp 0.4s ease both;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .result-header h2 {
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    /* Risk badge */
+    .risk-badge {
+      padding: 6px 18px;
+      border-radius: 100px;
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .risk-LOW    { background: rgba(45,255,150,.15); color: var(--green);  border: 1px solid var(--green); }
+    .risk-MEDIUM { background: rgba(255,216,77,.12); color: var(--yellow); border: 1px solid var(--yellow); }
+    .risk-HIGH   { background: rgba(255,59,92,.15);  color: var(--red);    border: 1px solid var(--red); }
+
+    /* Gauge */
+    .gauge-wrap {
+      position: relative;
+      margin-bottom: 28px;
+    }
+
+    .gauge-track {
+      height: 10px;
+      background: var(--surface2);
+      border-radius: 100px;
+      overflow: hidden;
+    }
+
+    .gauge-fill {
+      height: 100%;
+      border-radius: 100px;
+      transition: width 1s cubic-bezier(.16,1,.3,1);
+      width: 0%;
+    }
+    .gauge-fill.LOW    { background: linear-gradient(90deg, var(--green), #00e676); }
+    .gauge-fill.MEDIUM { background: linear-gradient(90deg, var(--yellow), #ffa726); }
+    .gauge-fill.HIGH   { background: linear-gradient(90deg, var(--red), #ff1744); }
+
+    .gauge-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      margin-top: 6px;
+    }
+
+    .score-big {
+      font-size: 3.5rem;
+      font-weight: 800;
+      letter-spacing: -2px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    /* Sub-scores */
+    .sub-scores {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .sub-score-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+    }
+
+    .sub-score-label {
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .sub-score-value {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -1px;
+    }
+
+    /* ── Error toast ─────────────────────────────────────────────────────── */
+    #error-msg {
+      display: none;
+      margin-top: 16px;
+      background: rgba(255,59,92,.12);
+      border: 1px solid var(--red);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      font-size: 0.82rem;
+      font-family: var(--font-mono);
+      color: var(--red);
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="logo-mark">🛡</div>
+    <div>
+      <h1>FraudShield</h1>
+      <span class="sub">Food Delivery Fraud Detection System · v1.0</span>
+    </div>
+  </header>
+
+  <!-- Two-column form grid -->
+  <div class="grid">
+
+    <!-- Left: Image Upload -->
+    <div class="card">
+      <p class="card-title">01 · Food Image</p>
+      <div class="drop-zone" id="drop-zone">
+        <input type="file" id="image-input" accept="image/*"/>
+        <div class="drop-icon">📸</div>
+        <p class="drop-label"><strong>Click or drag</strong> an image here</p>
+        <p class="drop-label" style="margin-top:4px;font-size:.72rem;">PNG, JPG, WEBP accepted</p>
+      </div>
+      <img id="image-preview" alt="Preview"/>
+    </div>
+
+    <!-- Right: Behavior Features -->
+    <div class="card">
+      <p class="card-title">02 · Order &amp; User Signals</p>
+      <div class="fields">
+
+        <div class="field-group">
+          <div>
+            <label>Account Age (days)</label>
+            <input type="number" id="account_age_days" placeholder="180" min="0"/>
+          </div>
+          <div>
+            <label>Total Orders</label>
+            <input type="number" id="total_orders" placeholder="25" min="0"/>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div>
+            <label>Refund Requests</label>
+            <input type="number" id="total_refund_requests" placeholder="2" min="0"/>
+          </div>
+          <div>
+            <label>Order Value (₹)</label>
+            <input type="number" id="order_value" placeholder="350" min="0"/>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div>
+            <label>Num Items</label>
+            <input type="number" id="num_items" placeholder="3" min="1"/>
+          </div>
+          <div>
+            <label>Delivery Time (min)</label>
+            <input type="number" id="delivery_time_min" placeholder="40" min="0"/>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div>
+            <label>Distance (km)</label>
+            <input type="number" id="distance_km" placeholder="5.5" step="0.1" min="0"/>
+          </div>
+          <div>
+            <label>Payment Method</label>
+            <select id="payment_method">
+              <option value="card">Card</option>
+              <option value="upi">UPI</option>
+              <option value="cod">COD</option>
+              <option value="wallet">Wallet</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div>
+            <label>Restaurant Rating</label>
+            <input type="number" id="restaurant_rating" placeholder="4.2" step="0.1" min="1" max="5"/>
+          </div>
+          <div>
+            <label>Driver Rating</label>
+            <input type="number" id="driver_rating" placeholder="4.5" step="0.1" min="1" max="5"/>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div>
+            <label>Complaints (30d)</label>
+            <input type="number" id="prev_complaints_30d" placeholder="0" min="0"/>
+          </div>
+          <div>
+            <label>Fraud Flags</label>
+            <input type="number" id="prev_fraud_flags" placeholder="0" min="0"/>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <div>
+            <label>Refund Amount 30d (₹)</label>
+            <input type="number" id="refund_amount_30d" placeholder="0" min="0"/>
+          </div>
+          <div>
+            <label>Days Since Last Refund</label>
+            <input type="number" id="days_since_last_refund" placeholder="365" min="0"/>
+          </div>
+        </div>
+
+        <!-- Boolean toggles -->
+        <div>
+          <label style="margin-bottom:8px;">Flags</label>
+          <div class="chip-group">
+            <button class="chip" data-field="is_peak_hour"   data-val="0">Peak Hour</button>
+            <button class="chip" data-field="is_new_address" data-val="0">New Address</button>
+            <button class="chip" data-field="promo_applied"  data-val="0">Promo Used</button>
+          </div>
+        </div>
+
+      </div><!-- /.fields -->
+    </div><!-- /.card -->
+  </div><!-- /.grid -->
+
+  <!-- Submit -->
+  <button class="btn-submit" id="submit-btn" type="button">
+    <span id="btn-text">Analyse Complaint</span>
+    <span class="spinner" id="spinner"></span>
+  </button>
+
+  <!-- Error -->
+  <div id="error-msg"></div>
+
+  <!-- Result -->
+  <div id="result-panel">
+    <div class="result-card">
+      <div class="result-header">
+        <h2>Analysis Result</h2>
+        <span class="risk-badge" id="risk-badge">—</span>
+      </div>
+
+      <div class="score-big" id="score-big">—</div>
+      <p style="font-size:.72rem;font-family:var(--font-mono);color:var(--muted);margin-bottom:20px;">COMBINED FRAUD SCORE</p>
+
+      <div class="gauge-wrap">
+        <div class="gauge-track"><div class="gauge-fill" id="gauge-fill"></div></div>
+        <div class="gauge-labels"><span>0.0 · Low</span><span>0.5 · Medium</span><span>1.0 · High</span></div>
+      </div>
+
+      <div class="sub-scores">
+        <div class="sub-score-card">
+          <div class="sub-score-label">📷 Image Score</div>
+          <div class="sub-score-value" id="img-score">—</div>
+        </div>
+        <div class="sub-score-card">
+          <div class="sub-score-label">🧠 Behavior Score</div>
+          <div class="sub-score-value" id="beh-score">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.wrapper -->
+
+<script>
+  // ── Image preview ──────────────────────────────────────────────────────────
+  const imageInput   = document.getElementById('image-input');
+  const imagePreview = document.getElementById('image-preview');
+  const dropZone     = document.getElementById('drop-zone');
+
+  imageInput.addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    imagePreview.src = URL.createObjectURL(file);
+    imagePreview.style.display = 'block';
+  });
+
+  ['dragover','dragleave','drop'].forEach(evt => {
+    dropZone.addEventListener(evt, e => {
+      e.preventDefault();
+      if (evt === 'dragover') dropZone.classList.add('dragover');
+      else                    dropZone.classList.remove('dragover');
+      if (evt === 'drop' && e.dataTransfer.files[0]) {
+        imageInput.files = e.dataTransfer.files;
+        imagePreview.src = URL.createObjectURL(e.dataTransfer.files[0]);
+        imagePreview.style.display = 'block';
+      }
+    });
+  });
+
+  // ── Chip toggles ───────────────────────────────────────────────────────────
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const active = chip.classList.toggle('active');
+      chip.dataset.val = active ? '1' : '0';
+    });
+  });
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  const numVal = (id, fallback = 0) => {
+    const v = parseFloat(document.getElementById(id)?.value);
+    return isNaN(v) ? fallback : v;
+  };
+
+  const chipVal = field =>
+    parseInt(document.querySelector(`.chip[data-field="${field}"]`)?.dataset.val ?? '0', 10);
+
+  // ── Submit ─────────────────────────────────────────────────────────────────
+  document.getElementById('submit-btn').addEventListener('click', async () => {
+    const file = imageInput.files[0];
+    if (!file) { showError('Please select a food image first.'); return; }
+
+    setLoading(true);
+    hideError();
+
+    const userData = {
+      account_age_days       : numVal('account_age_days',       180),
+      total_orders           : numVal('total_orders',           10),
+      total_refund_requests  : numVal('total_refund_requests',  0),
+      order_value            : numVal('order_value',            300),
+      num_items              : numVal('num_items',              2),
+      is_peak_hour           : chipVal('is_peak_hour'),
+      delivery_time_min      : numVal('delivery_time_min',      40),
+      distance_km            : numVal('distance_km',            5),
+      payment_method         : document.getElementById('payment_method').value,
+      is_new_address         : chipVal('is_new_address'),
+      promo_applied          : chipVal('promo_applied'),
+      restaurant_rating      : numVal('restaurant_rating',      4.0),
+      driver_rating          : numVal('driver_rating',          4.0),
+      prev_complaints_30d    : numVal('prev_complaints_30d',    0),
+      prev_fraud_flags       : numVal('prev_fraud_flags',       0),
+      refund_amount_30d      : numVal('refund_amount_30d',      0),
+      days_since_last_refund : numVal('days_since_last_refund', 365),
+    };
+
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('data', JSON.stringify(userData));
+
+    try {
+      const res  = await fetch('http://127.0.0.1:5000/predict', { method: 'POST', body: formData });
+      const json = await res.json();
+      if (!res.ok) { showError(json.error || 'Prediction failed.'); return; }
+      renderResult(json);
+    } catch (err) {
+      showError('Could not reach the server. Is app.py running?');
+    } finally {
+      setLoading(false);
+    }
+  });
+
+  // ── Render result ──────────────────────────────────────────────────────────
+  function renderResult({ fraud_score, risk_level, image_score, behavior_score }) {
+    const panel = document.getElementById('result-panel');
+    panel.style.display = 'block';
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    document.getElementById('score-big').textContent = fraud_score.toFixed(4);
+    document.getElementById('img-score').textContent  = image_score.toFixed(4);
+    document.getElementById('beh-score').textContent  = behavior_score.toFixed(4);
+
+    const badge = document.getElementById('risk-badge');
+    badge.textContent = risk_level;
+    badge.className   = `risk-badge risk-${risk_level}`;
+
+    const fill = document.getElementById('gauge-fill');
+    fill.className = `gauge-fill ${risk_level}`;
+    // Animate after paint
+    requestAnimationFrame(() => {
+      fill.style.width = (fraud_score * 100).toFixed(1) + '%';
+    });
+  }
+
+  // ── UI helpers ─────────────────────────────────────────────────────────────
+  function setLoading(on) {
+    const btn     = document.getElementById('submit-btn');
+    const spinner = document.getElementById('spinner');
+    const txt     = document.getElementById('btn-text');
+    btn.disabled        = on;
+    spinner.style.display = on ? 'block' : 'none';
+    txt.textContent     = on ? 'Analysing…' : 'Analyse Complaint';
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent    = '⚠ ' + msg;
+    el.style.display  = 'block';
+  }
+
+  function hideError() {
+    document.getElementById('error-msg').style.display = 'none';
+  }
+</script>
+</body>
+</html>
