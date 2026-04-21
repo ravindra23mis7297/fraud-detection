@@ -610,18 +610,25 @@
     formData.append('image', file);
     formData.append('data', JSON.stringify(userData));
 
-    try {
-      const res  = await fetch('http://127.0.0.1:5000/predict', { method: 'POST', body: formData });
-      const json = await res.json();
-      if (!res.ok) { showError(json.error || 'Prediction failed.'); return; }
-      renderResult(json);
-    } catch (err) {
-      showError('Could not reach the server. Is app.py running?');
-    } finally {
-      setLoading(false);
-    }
+try {
+  const res = await fetch('https://fraud-detection-cf39.onrender.com/predict', {
+    method: 'POST',
+    body: formData
   });
 
+  const json = await res.json();
+
+  if (!res.ok) {
+    showError(json.error || 'Prediction failed.');
+    return;
+  }
+
+  renderResult(json);
+} catch (err) {
+  showError('Could not reach the server.');
+} finally {
+  setLoading(false);
+}
   // ── Render result ──────────────────────────────────────────────────────────
   function renderResult({ fraud_score, risk_level, image_score, behavior_score }) {
     const panel = document.getElementById('result-panel');
