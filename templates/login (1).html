@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FraudShield — Secure Access</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #0a0b0e;
+      --surface:      #111318;
+      --surface2:     #181c24;
+      --border:       #252a36;
+      --accent:       #ff5c3a;
+      --accent2:      #ff8c6b;
+      --green:        #2dff96;
+      --yellow:       #ffd84d;
+      --red:          #ff3b5c;
+      --text:         #e8eaf0;
+      --muted:        #636b82;
+      --font-display: 'Syne', sans-serif;
+      --font-mono:    'DM Mono', monospace;
+      --radius:       10px;
+      --transition:   0.2s ease;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-display);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Grid background */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0;
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    /* Warm glow behind the card */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 20%; left: 50%;
+      transform: translateX(-50%);
+      width: 600px; height: 400px;
+      background: radial-gradient(ellipse, rgba(255,92,58,0.12) 0%, transparent 70%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ── PAGES ─────────────────────────────────────────────────────────────── */
+    .page {
+      position: relative; z-index: 1;
+      display: none;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .page.active { display: flex; }
+
+    /* ── LOGIN PAGE ─────────────────────────────────────────────────────────── */
+    #login-page {
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .login-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 40px;
+      animation: fadeDown 0.5s ease both;
+    }
+
+    .logo-mark {
+      width: 44px; height: 44px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: grid; place-items: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .login-header h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .login-header span.sub {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      margin-top: 2px;
+    }
+
+    /* Card */
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 40px 36px;
+      width: 100%;
+      max-width: 480px;
+      animation: fadeUp 0.5s ease 0.1s both;
+    }
+
+    .card-eyebrow {
+      font-size: 0.68rem;
+      font-family: var(--font-mono);
+      color: var(--accent);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .login-card h2 {
+      font-size: 1.55rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .login-card p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    /* Field */
+    .field-wrap { margin-bottom: 18px; }
+
+    .field-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 7px;
+    }
+
+    .field-label-row label {
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      letter-spacing: 0.5px;
+    }
+
+    .forgot-link {
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .forgot-link:hover { color: var(--accent2); }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 13px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      pointer-events: none;
+    }
+
+    .field-wrap input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 12px 11px 38px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .field-wrap input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(255,92,58,0.12);
+    }
+    .field-wrap input.error-field {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(255,59,92,0.12);
+    }
+
+    .toggle-pw {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 4px;
+      transition: color var(--transition);
+    }
+    .toggle-pw:hover { color: var(--text); }
+
+    /* Checkbox */
+    .check-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .check-row input[type="checkbox"] {
+      width: 16px; height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .check-row label {
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    /* Error banner */
+    .error-banner {
+      background: rgba(255,59,92,0.1);
+      border: 1px solid rgba(255,59,92,0.3);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      color: var(--red);
+      margin-bottom: 18px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+    .error-banner.visible { display: flex; }
+
+    /* Buttons */
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius);
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: transform var(--transition), background var(--transition), opacity var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .btn-primary:hover  { background: var(--accent2); transform: translateY(-2px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1;
+      height: 1px; background: var(--border);
+    }
+
+    .btn-sso {
+      width: 100%;
+      padding: 13px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition);
+    }
+    .btn-sso:hover { border-color: var(--muted); background: var(--surface2); }
+
+    .register-row {
+      text-align: center;
+      margin-top: 22px;
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      color: var(--muted);
+    }
+    .register-row a {
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .register-row a:hover { color: var(--accent2); }
+
+    /* Spinner */
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    /* ── DASHBOARD PAGE ─────────────────────────────────────────────────────── */
+    #dashboard-page {
+      flex-direction: column;
+    }
+
+    /* Header */
+    .dash-header {
+      position: relative; z-index: 1;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 28px 40px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .dash-header .logo-mark { width: 38px; height: 38px; font-size: 18px; }
+
+    .dash-header h1 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      flex: 1;
+    }
+
+    .dash-header span.sub {
+      display: block;
+      font-size: 0.68rem;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      margin-top: 1px;
+    }
+
+    .admin-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(255,92,58,0.12);
+      border: 1px solid rgba(255,92,58,0.3);
+      border-radius: 100px;
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      color: var(--accent);
+    }
+
+    .admin-dot {
+      width: 6px; height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s ease infinite;
+    }
+
+    .btn-logout {
+      padding: 7px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .btn-logout:hover { border-color: var(--red); color: var(--red); }
+
+    /* Dashboard body */
+    .dash-body {
+      position: relative; z-index: 1;
+      max-width: 1060px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+      width: 100%;
+    }
+
+    /* Dashboard grid */
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 680px) { .dash-grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: border-color var(--transition);
+    }
+    .card:hover { border-color: #333a4a; }
+
+    .card-title {
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      color: var(--accent);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    /* Image upload */
+    .drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 32px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition);
+      position: relative;
+    }
+    .drop-zone:hover,
+    .drop-zone.dragover { border-color: var(--accent); background: rgba(255,92,58,.05); }
+    .drop-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-icon { font-size: 2rem; margin-bottom: 10px; }
+    .drop-label { font-size: 0.85rem; color: var(--muted); }
+    .drop-label strong { color: var(--accent); }
+    #image-preview {
+      width: 100%; max-height: 200px; object-fit: cover;
+      border-radius: var(--radius); margin-top: 14px;
+      display: none; border: 1px solid var(--border);
+    }
+
+    /* Form fields */
+    .fields { display: flex; flex-direction: column; gap: 12px; }
+    .field-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    label {
+      display: block;
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      color: var(--muted);
+      margin-bottom: 5px;
+      letter-spacing: 0.5px;
+    }
+
+    input[type="number"],
+    input[type="text"],
+    select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      outline: none;
+      transition: border-color var(--transition);
+      appearance: none;
+    }
+    input[type="number"]:focus, input[type="text"]:focus, select:focus { border-color: var(--accent); }
+
+    /* Chips */
+    .chip-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      padding: 6px 14px;
+      border-radius: 100px;
+      border: 1px solid var(--border);
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      background: transparent;
+      color: var(--muted);
+      transition: all var(--transition);
+    }
+    .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* Submit */
+    .btn-submit {
+      margin-top: 32px;
+      width: 100%;
+      padding: 16px;
+      border-radius: var(--radius);
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: transform var(--transition), background var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .btn-submit:hover  { background: var(--accent2); transform: translateY(-2px); }
+    .btn-submit:active { transform: translateY(0); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .dash-spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    /* Error */
+    #error-msg {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: rgba(255,59,92,0.1);
+      border: 1px solid rgba(255,59,92,0.3);
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+      color: var(--red);
+      display: none;
+    }
+
+    /* Result panel */
+    #result-panel { display: none; margin-top: 32px; }
+
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .result-header h2 { font-size: 1.1rem; font-weight: 700; }
+
+    .risk-badge {
+      padding: 5px 14px;
+      border-radius: 100px;
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .risk-badge.risk-LOW    { background: rgba(45,255,150,.1); color: var(--green); border: 1px solid rgba(45,255,150,.25); }
+    .risk-badge.risk-MEDIUM { background: rgba(255,216,77,.1);  color: var(--yellow); border: 1px solid rgba(255,216,77,.25); }
+    .risk-badge.risk-HIGH   { background: rgba(255,59,92,.1);   color: var(--red);  border: 1px solid rgba(255,59,92,.25); }
+
+    .score-big {
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -2px;
+      margin-bottom: 4px;
+    }
+
+    .gauge-wrap { margin: 16px 0 24px; }
+    .gauge-track {
+      height: 8px;
+      background: var(--surface2);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+    .gauge-fill {
+      height: 100%;
+      width: 0;
+      border-radius: 4px;
+      transition: width 0.9s cubic-bezier(.4,0,.2,1);
+    }
+    .gauge-fill.LOW    { background: var(--green); }
+    .gauge-fill.MEDIUM { background: var(--yellow); }
+    .gauge-fill.HIGH   { background: var(--red); }
+    .gauge-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      color: var(--muted);
+    }
+
+    .sub-scores {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .sub-score-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .sub-score-label { font-size: 0.75rem; font-family: var(--font-mono); color: var(--muted); margin-bottom: 6px; }
+    .sub-score-value { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
+
+    /* ── Animations ─────────────────────────────────────────────────────────── */
+    @keyframes spin     { to { transform: rotate(360deg); } }
+    @keyframes fadeUp   { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+    @keyframes fadeDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: none; } }
+    @keyframes pulse    { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-8px); }
+      40%      { transform: translateX(8px); }
+      60%      { transform: translateX(-5px); }
+      80%      { transform: translateX(5px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+  </style>
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════
+       LOGIN PAGE
+  ══════════════════════════════════════════════════════════ -->
+  <div class="page active" id="login-page">
+
+    <div class="login-header">
+      <div class="logo-mark">🛡</div>
+      <div>
+        <h1>FraudShield</h1>
+        <span class="sub">FOOD DELIVERY FRAUD DETECTION SYSTEM · V1.0</span>
+      </div>
+    </div>
+
+    <div class="login-card">
+      <div class="card-eyebrow">01 · SECURE ACCESS</div>
+      <h2>Sign in to your console</h2>
+      <p>Authenticate to access fraud analytics and complaint review.</p>
+
+      <!-- Error banner -->
+      <div class="error-banner" id="login-error">
+        <span>⚠</span>
+        <span id="login-error-text">Invalid credentials. Access denied.</span>
+      </div>
+
+      <!-- Email -->
+      <div class="field-wrap">
+        <div class="field-label-row">
+          <label for="login-email">EMAIL</label>
+        </div>
+        <div class="input-wrap">
+          <span class="input-icon">✉</span>
+          <input type="text" id="login-email" placeholder="analyst@fraudshield.io" autocomplete="username"/>
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="field-wrap">
+        <div class="field-label-row">
+          <label for="login-password">PASSWORD</label>
+          <a class="forgot-link" onclick="showForgot()">Forgot?</a>
+        </div>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input type="password" id="login-password" placeholder="••••••••••••" autocomplete="current-password"/>
+          <button class="toggle-pw" type="button" onclick="togglePw()" id="pw-toggle" title="Show/hide password">👁</button>
+        </div>
+      </div>
+
+      <!-- Remember me -->
+      <div class="check-row">
+        <input type="checkbox" id="remember-me" checked/>
+        <label for="remember-me">Keep me signed in on this device</label>
+      </div>
+
+      <!-- Authenticate -->
+      <button class="btn-primary" id="auth-btn" onclick="doLogin()">
+        <span id="auth-btn-text">Authenticate →</span>
+        <span class="spinner" id="auth-spinner"></span>
+      </button>
+
+      <div class="divider">OR</div>
+
+      <button class="btn-sso" onclick="showSSOMessage()">Continue with SSO</button>
+
+      <div class="register-row">
+        No account? <a onclick="showForgot()">Request access</a>
+      </div>
+    </div>
+
+  </div><!-- /#login-page -->
+
+
+  <!-- ══════════════════════════════════════════════════════════
+       DASHBOARD PAGE
+  ══════════════════════════════════════════════════════════ -->
+  <div class="page" id="dashboard-page">
+
+    <!-- Header -->
+    <header class="dash-header">
+      <div class="logo-mark">🛡</div>
+      <div style="flex:1">
+        <h1>FraudShield</h1>
+        <span class="sub">FOOD DELIVERY FRAUD DETECTION SYSTEM · V1.0</span>
+      </div>
+      <div class="admin-badge">
+        <div class="admin-dot"></div>
+        <span id="admin-label">ADMIN</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+    </header>
+
+    <!-- Body -->
+    <div class="dash-body">
+
+      <div class="dash-grid">
+
+        <!-- Left: Image upload -->
+        <div class="card">
+          <div class="card-title">01 · Complaint Image</div>
+          <div class="drop-zone" id="drop-zone">
+            <input type="file" id="image-input" accept="image/*"/>
+            <div class="drop-icon">📷</div>
+            <div class="drop-label">
+              <strong>Click to upload</strong> or drag & drop<br/>
+              PNG · JPG · WEBP · GIF
+            </div>
+          </div>
+          <img id="image-preview" alt="Preview"/>
+        </div>
+
+        <!-- Right: Order details -->
+        <div class="card">
+          <div class="card-title">02 · Order Details</div>
+          <div class="fields">
+
+            <div class="field-group">
+              <div>
+                <label>Account Age (days)</label>
+                <input type="number" id="account_age_days" placeholder="180" min="0"/>
+              </div>
+              <div>
+                <label>Total Orders</label>
+                <input type="number" id="total_orders" placeholder="10" min="0"/>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div>
+                <label>Refund Requests</label>
+                <input type="number" id="total_refund_requests" placeholder="0" min="0"/>
+              </div>
+              <div>
+                <label>Order Value (₹)</label>
+                <input type="number" id="order_value" placeholder="300" min="0"/>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div>
+                <label>No. of Items</label>
+                <input type="number" id="num_items" placeholder="2" min="1"/>
+              </div>
+              <div>
+                <label>Delivery Time (min)</label>
+                <input type="number" id="delivery_time_min" placeholder="40" min="0"/>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div>
+                <label>Distance (km)</label>
+                <input type="number" id="distance_km" placeholder="5.5" step="0.1" min="0"/>
+              </div>
+              <div>
+                <label>Payment Method</label>
+                <select id="payment_method">
+                  <option value="card">Card</option>
+                  <option value="upi">UPI</option>
+                  <option value="cod">COD</option>
+                  <option value="wallet">Wallet</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div>
+                <label>Restaurant Rating</label>
+                <input type="number" id="restaurant_rating" placeholder="4.2" step="0.1" min="1" max="5"/>
+              </div>
+              <div>
+                <label>Driver Rating</label>
+                <input type="number" id="driver_rating" placeholder="4.5" step="0.1" min="1" max="5"/>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div>
+                <label>Complaints (30d)</label>
+                <input type="number" id="prev_complaints_30d" placeholder="0" min="0"/>
+              </div>
+              <div>
+                <label>Fraud Flags</label>
+                <input type="number" id="prev_fraud_flags" placeholder="0" min="0"/>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <div>
+                <label>Refund Amount 30d (₹)</label>
+                <input type="number" id="refund_amount_30d" placeholder="0" min="0"/>
+              </div>
+              <div>
+                <label>Days Since Last Refund</label>
+                <input type="number" id="days_since_last_refund" placeholder="365" min="0"/>
+              </div>
+            </div>
+
+            <div>
+              <label style="margin-bottom:8px;">Flags</label>
+              <div class="chip-group">
+                <button class="chip" data-field="is_peak_hour"   data-val="0">Peak Hour</button>
+                <button class="chip" data-field="is_new_address" data-val="0">New Address</button>
+                <button class="chip" data-field="promo_applied"  data-val="0">Promo Used</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div><!-- /.dash-grid -->
+
+      <!-- Submit -->
+      <button class="btn-submit" id="submit-btn" type="button" onclick="submitAnalysis()">
+        <span id="btn-text">Analyse Complaint</span>
+        <span class="dash-spinner" id="spinner"></span>
+      </button>
+
+      <!-- Error -->
+      <div id="error-msg"></div>
+
+      <!-- Result -->
+      <div id="result-panel">
+        <div class="result-card">
+          <div class="result-header">
+            <h2>Analysis Result</h2>
+            <span class="risk-badge" id="risk-badge">—</span>
+          </div>
+          <div class="score-big" id="score-big">—</div>
+          <p style="font-size:.72rem;font-family:var(--font-mono);color:var(--muted);margin-bottom:20px;">COMBINED FRAUD SCORE</p>
+          <div class="gauge-wrap">
+            <div class="gauge-track"><div class="gauge-fill" id="gauge-fill"></div></div>
+            <div class="gauge-labels"><span>0.0 · Low</span><span>0.5 · Medium</span><span>1.0 · High</span></div>
+          </div>
+          <div class="sub-scores">
+            <div class="sub-score-card">
+              <div class="sub-score-label">📷 Image Score</div>
+              <div class="sub-score-value" id="img-score">—</div>
+            </div>
+            <div class="sub-score-card">
+              <div class="sub-score-label">🧠 Behavior Score</div>
+              <div class="sub-score-value" id="beh-score">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.dash-body -->
+  </div><!-- /#dashboard-page -->
+
+
+  <script>
+    /* ════════════════════════════════════════════════════════════
+       ADMIN CREDENTIALS  — change these to whatever you need
+    ═══════════════════════════════════════════════════════════ */
+    const ADMINS = [
+      { email: 'admin@fraudshield.io',    password: 'Admin@1234',    label: 'ADMIN' },
+      { email: 'analyst@fraudshield.io',  password: 'Analyst@5678',  label: 'ANALYST' },
+    ];
+
+    const SESSION_KEY = 'fs_admin_session';
+
+    /* ── Page switching ──────────────────────────────────────────── */
+    function showPage(id) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    /* ── On load: check existing session ────────────────────────── */
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
+      if (saved) {
+        // Already logged in — redirect straight to dashboard
+        window.location.href = 'index.html';
+      }
+    });
+
+    /* ── Login logic ─────────────────────────────────────────────── */
+    function doLogin() {
+      const email    = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const remember = document.getElementById('remember-me').checked;
+
+      const btn     = document.getElementById('auth-btn');
+      const spinner = document.getElementById('auth-spinner');
+      const btnText = document.getElementById('auth-btn-text');
+
+      btn.disabled          = true;
+      spinner.style.display = 'block';
+      btnText.style.display = 'none';
+      hideLoginError();
+
+      // Simulate network delay for realism
+      setTimeout(() => {
+        const match = ADMINS.find(a => a.email === email && a.password === password);
+
+        btn.disabled          = false;
+        spinner.style.display = 'none';
+        btnText.style.display = 'inline';
+
+        if (!match) {
+          showLoginError('Invalid credentials. Access denied.');
+          document.getElementById('login-card-wrap')?.classList.add('shake');
+          document.getElementById('login-email').classList.add('error-field');
+          document.getElementById('login-password').classList.add('error-field');
+          document.getElementById('login-password').value = '';
+          return;
+        }
+
+        // Store session
+        const payload = JSON.stringify({ email: match.email, label: match.label });
+        if (remember) { localStorage.setItem(SESSION_KEY, payload); }
+        else           { sessionStorage.setItem(SESSION_KEY, payload); }
+
+        // Redirect to main dashboard
+        window.location.href = 'index.html';
+      }, 900);
+    }
+
+    /* Enter key submits login */
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && document.getElementById('login-page').classList.contains('active')) {
+        doLogin();
+      }
+    });
+
+    /* ── Logout ──────────────────────────────────────────────────── */
+    function doLogout() {
+      localStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(SESSION_KEY);
+      document.getElementById('login-email').value    = '';
+      document.getElementById('login-password').value = '';
+      hideLoginError();
+      clearResult();
+      showPage('login-page');
+    }
+
+    /* ── UI helpers ──────────────────────────────────────────────── */
+    function showLoginError(msg) {
+      const el = document.getElementById('login-error');
+      document.getElementById('login-error-text').textContent = msg;
+      el.classList.add('visible');
+      // Shake the card
+      const card = document.querySelector('.login-card');
+      card.classList.remove('shake');
+      void card.offsetWidth;
+      card.classList.add('shake');
+    }
+
+    function hideLoginError() {
+      document.getElementById('login-error').classList.remove('visible');
+      document.getElementById('login-email').classList.remove('error-field');
+      document.getElementById('login-password').classList.remove('error-field');
+    }
+
+    function togglePw() {
+      const inp = document.getElementById('login-password');
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+    }
+
+    function showForgot() {
+      alert('Please contact your system administrator to reset credentials or request access.');
+    }
+
+    function showSSOMessage() {
+      alert('SSO is not configured for this environment. Please use your admin credentials.');
+    }
+
+    /* ── Clear on new input ──────────────────────────────────────── */
+    ['login-email','login-password'].forEach(id => {
+      document.getElementById(id).addEventListener('input', hideLoginError);
+    });
+
+    /* ═══════════════════════════════════════════════════════════════
+       DASHBOARD LOGIC (identical to original index.html)
+    ════════════════════════════════════════════════════════════════ */
+
+    /* Image preview */
+    const imageInput   = document.getElementById('image-input');
+    const imagePreview = document.getElementById('image-preview');
+    const dropZone     = document.getElementById('drop-zone');
+
+    imageInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      imagePreview.src = URL.createObjectURL(file);
+      imagePreview.style.display = 'block';
+    });
+
+    ['dragover','dragleave','drop'].forEach(evt => {
+      dropZone.addEventListener(evt, e => {
+        e.preventDefault();
+        if (evt === 'dragover') dropZone.classList.add('dragover');
+        else                    dropZone.classList.remove('dragover');
+        if (evt === 'drop' && e.dataTransfer.files[0]) {
+          imageInput.files = e.dataTransfer.files;
+          imagePreview.src = URL.createObjectURL(e.dataTransfer.files[0]);
+          imagePreview.style.display = 'block';
+        }
+      });
+    });
+
+    /* Chip toggles */
+    document.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const active = chip.classList.toggle('active');
+        chip.dataset.val = active ? '1' : '0';
+      });
+    });
+
+    /* Helpers */
+    const numVal = (id, fallback = 0) => {
+      const v = parseFloat(document.getElementById(id)?.value);
+      return isNaN(v) ? fallback : v;
+    };
+    const chipVal = field =>
+      parseInt(document.querySelector(`.chip[data-field="${field}"]`)?.dataset.val ?? '0', 10);
+
+    /* Submit */
+    async function submitAnalysis() {
+      const file = imageInput.files[0];
+      if (!file) { showError('Please select a food image first.'); return; }
+
+      setLoading(true);
+      hideError();
+
+      const userData = {
+        account_age_days       : numVal('account_age_days',       180),
+        total_orders           : numVal('total_orders',           10),
+        total_refund_requests  : numVal('total_refund_requests',  0),
+        order_value            : numVal('order_value',            300),
+        num_items              : numVal('num_items',              2),
+        is_peak_hour           : chipVal('is_peak_hour'),
+        delivery_time_min      : numVal('delivery_time_min',      40),
+        distance_km            : numVal('distance_km',            5),
+        payment_method         : document.getElementById('payment_method').value,
+        is_new_address         : chipVal('is_new_address'),
+        promo_applied          : chipVal('promo_applied'),
+        restaurant_rating      : numVal('restaurant_rating',      4.0),
+        driver_rating          : numVal('driver_rating',          4.0),
+        prev_complaints_30d    : numVal('prev_complaints_30d',    0),
+        prev_fraud_flags       : numVal('prev_fraud_flags',       0),
+        refund_amount_30d      : numVal('refund_amount_30d',      0),
+        days_since_last_refund : numVal('days_since_last_refund', 365),
+      };
+
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('data', JSON.stringify(userData));
+
+      try {
+        const res  = await fetch('https://fraud-detection-mjfj.onrender.com/predict', {
+          method: 'POST', body: formData
+        });
+        const json = await res.json();
+        if (!res.ok) { showError(json.error || 'Prediction failed.'); return; }
+        renderResult(json);
+      } catch (err) {
+        showError('Could not reach the server. Check your connection.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function renderResult({ fraud_score, risk_level, image_score, behavior_score }) {
+      const panel = document.getElementById('result-panel');
+      panel.style.display = 'block';
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      document.getElementById('score-big').textContent = fraud_score.toFixed(4);
+      document.getElementById('img-score').textContent  = image_score.toFixed(4);
+      document.getElementById('beh-score').textContent  = behavior_score.toFixed(4);
+
+      const badge = document.getElementById('risk-badge');
+      badge.textContent = risk_level;
+      badge.className   = `risk-badge risk-${risk_level}`;
+
+      const fill = document.getElementById('gauge-fill');
+      fill.className = `gauge-fill ${risk_level}`;
+      requestAnimationFrame(() => {
+        fill.style.width = (fraud_score * 100).toFixed(1) + '%';
+      });
+    }
+
+    function setLoading(on) {
+      const btn     = document.getElementById('submit-btn');
+      const spinner = document.getElementById('spinner');
+      const txt     = document.getElementById('btn-text');
+      btn.disabled          = on;
+      spinner.style.display = on ? 'block' : 'none';
+      txt.textContent       = on ? 'Analysing…' : 'Analyse Complaint';
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('error-msg');
+      el.textContent   = '⚠ ' + msg;
+      el.style.display = 'block';
+    }
+
+    function hideError() {
+      document.getElementById('error-msg').style.display = 'none';
+    }
+
+    function clearResult() {
+      document.getElementById('result-panel').style.display = 'none';
+      hideError();
+    }
+  </script>
+</body>
+</html>
