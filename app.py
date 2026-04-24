@@ -26,6 +26,11 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/login")
+def login():
+    return render_template("login.html")
+
+
 @app.route("/predict", methods=["POST"])
 def predict():
     if "image" not in request.files:

@@ -914,7 +914,7 @@
       const saved = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
       if (saved) {
         // Already logged in — redirect straight to dashboard
-        window.location.href = 'index.html';
+        window.location.href = '/';
       }
     });
 
@@ -956,7 +956,7 @@
         else           { sessionStorage.setItem(SESSION_KEY, payload); }
 
         // Redirect to main dashboard
-        window.location.href = 'index.html';
+        window.location.href = '/';
       }, 900);
     }
 

@@ -69,6 +69,45 @@
       margin-bottom: 48px;
     }
 
+    .admin-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(255,92,58,0.12);
+      border: 1px solid rgba(255,92,58,0.3);
+      border-radius: 100px;
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      color: var(--accent);
+      margin-left: auto;
+    }
+
+    .admin-dot {
+      width: 6px; height: 6px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s ease infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .btn-logout {
+      padding: 7px 16px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-logout:hover { border-color: var(--red); color: var(--red); }
+
     .logo-mark {
       width: 44px; height: 44px;
       background: var(--accent);
@@ -377,6 +416,11 @@
       <h1>FraudShield</h1>
       <span class="sub">Food Delivery Fraud Detection System · v1.0</span>
     </div>
+    <div class="admin-badge">
+      <div class="admin-dot"></div>
+      <span id="admin-label">ADMIN</span>
+    </div>
+    <button class="btn-logout" id="logout-btn">Sign Out</button>
   </header>
 
   <!-- Two-column form grid -->
@@ -536,6 +580,32 @@
 </div><!-- /.wrapper -->
 
 <script>
+  const SESSION_KEY = 'fs_admin_session';
+
+  // ── Session guard + logout ─────────────────────────────────────────────────
+  window.doLogout = function() {
+    localStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(SESSION_KEY);
+    window.location.href = '/login';
+  };
+
+  (function() {
+    const saved = sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(SESSION_KEY);
+    if (!saved) {
+      window.location.href = '/login';
+      return;
+    }
+    try {
+      const { label } = JSON.parse(saved);
+      const el = document.getElementById('admin-label');
+      if (el) el.textContent = label || 'ADMIN';
+    } catch(e) {}
+
+    // Attach logout button now that DOM is ready (script is at bottom of body)
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) logoutBtn.onclick = window.doLogout;
+  })();
+
   // ── Image preview ──────────────────────────────────────────────────────────
   const imageInput   = document.getElementById('image-input');
   const imagePreview = document.getElementById('image-preview');
